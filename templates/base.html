@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}INFOSYS Image Analyzer{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #23cca2;
+            --secondary-color: #2c3e50;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--background-color);
+            color: #1a1a1a;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .highlight {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-box {
+            border: 3px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 4rem 2rem;
+            text-align: center;
+            background-color: var(--card-background);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 2rem auto;
+            max-width: 800px;
+            position: relative;
+        }
+
+        .upload-box.has-image {
+            cursor: default;
+            padding: 2rem;
+        }
+
+        .upload-box.drag-over {
+            border-color: var(--secondary-color);
+            background-color: #f8fafc;
+        }
+
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .upload-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .submit-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            background-color: #1a2c3d;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-container {
+            position: relative;
+            margin: 1rem 0;
+            max-width: 100%;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: -0.5rem;
+            right: -0.5rem;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .remove-image:hover {
+            background-color: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: flex-start;
+        }
+
+        .copy-btn {
+            background-color: var(--primary-color);
+            color: white;
+            min-width: 100px;
+        }
+
+        .copy-btn:hover {
+            background-color: #1ba686;
+            transform: translateY(-2px);
+        }
+
+        .speak-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            min-width: 100px;
+        }
+
+        .speak-btn:hover {
+            background-color: #1a2c3d;
+            transform: translateY(-2px);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-decoration: none;
+            z-index: 100;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            background-color: #1ba686;
+            transform: translateY(-2px);
+        }
+
+        .results-container {
+            max-width: 900px;
+            margin: 3rem auto;
+        }
+
+        .result-section {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .result-section h3 {
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Progress bar styling */
+        .progress {
+            height: 1.5rem;
+            background-color: #e9ecef;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+            color: white;
+            text-align: center;
+            line-height: 1.5rem;
+            font-size: 1rem;
+        }
+
+        /* Sentiment colors */
+        .bg-success {
+            background-color: #22c55e !important;
+        }
+
+        .bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        .bg-warning {
+            background-color: #f59e0b !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            h3 {
+                font-size: 1.5rem;
+            }
+
+            .upload-box {
+                padding: 2rem 1rem;
+            }
+
+            .back-btn {
+                top: 1rem;
+                left: 1rem;
+                padding: 0.6rem 1rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <a href="/" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Tools
+    </a>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>Analyzing image...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadBox = document.querySelector('.upload-box');
+            const fileInput = document.querySelector('input[type="file"]');
+            const submitBtn = document.querySelector('.submit-btn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            let currentFile = null;
+
+            if (uploadBox && fileInput) {
+                uploadBox.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadBox.classList.add('drag-over');
+                });
+
+                uploadBox.addEventListener('dragleave', () => {
+                    uploadBox.classList.remove('drag-over');
+                });
+
+                uploadBox.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadBox.classList.remove('drag-over');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        handleFile(files[0]);
+                    }
+                });
+
+                uploadBox.addEventListener('click', () => {
+                    if (!uploadBox.classList.contains('has-image')) {
+                        fileInput.click();
+                    }
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        handleFile(e.target.files[0]);
+                    }
+                });
+
+                function handleFile(file) {
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please upload an image file');
+                        return;
+                    }
+
+                    currentFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploadBox.innerHTML = `
+                            <div class="preview-container">
+                                <img src="${e.target.result}" alt="Preview" class="preview-image">
+                                <button class="remove-image" onclick="removeImage(event)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                        uploadBox.classList.add('has-image');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                window.removeImage = (event) => {
+                    event.stopPropagation();
+                    currentFile = null;
+                    uploadBox.innerHTML = `
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag and drop your image here or click to browse</p>
+                        <input type="file" accept="image/*" style="display: none;">
+                    `;
+                    uploadBox.classList.remove('has-image');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                };
+
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', async () => {
+                        if (!currentFile) {
+                            alert('Please select an image first');
+                            return;
+                        }
+
+                        const formData = new FormData();
+                        formData.append('image', currentFile);
+
+                        try {
+                            loadingOverlay.classList.remove('hidden');
+                            submitBtn.disabled = true;
+
+                            const response = await fetch(window.location.pathname, {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+
+                            const result = await response.json();
+                            displayResults(result);
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('An error occurred while processing the image. Please try again.');
+                        } finally {
+                            loadingOverlay.classList.add('hidden');
+                            submitBtn.disabled = false;
+                        }
+                    });
+                }
+            }
+        });
+
+        function copyText(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function speakText(text) {
+            fetch('/text-to-speech', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.play();
+            })
+            .catch(err => {
+                console.error('Failed to speak text: ', err);
+                alert('Failed to generate speech. Please try again.');
+            });
+        }
+
+        // This function will be implemented in each template
+        function displayResults(results) {
+            // Implementation will be provided in child templates
+            console.log('Results received:', results);
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html> 

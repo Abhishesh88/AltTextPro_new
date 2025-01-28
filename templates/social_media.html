@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - Social Media{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Social Media Caption Generator</h1>
+    <p class="subtitle">Upload an image to generate engaging captions and hashtags for your social media posts.</p>
+</header>
+
+<div class="upload-box">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Drag and drop your image here or click to browse</p>
+    <input type="file" accept="image/*" style="display: none;">
+</div>
+
+<button class="submit-btn" disabled>
+    <i class="fas fa-magic"></i> Generate Caption
+</button>
+
+<div class="results-container hidden">
+    <div class="result-section">
+        <h3>Caption</h3>
+        <p id="caption"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('caption').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('caption').textContent)">
+                <i class="fas fa-volume-up"></i> Speak
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Hashtags</h3>
+        <p id="hashtags"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('hashtags').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Sentiment Analysis</h3>
+        <div id="sentimentContainer">
+            <div class="progress">
+                <div id="sentimentBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="sentiment" class="mt-2"></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function displayResults(results) {
+        const resultsContainer = document.querySelector('.results-container');
+        
+        // Update caption
+        document.getElementById('caption').textContent = results.caption || 'No caption generated';
+        
+        // Update hashtags
+        document.getElementById('hashtags').textContent = results.hashtags || 'No hashtags generated';
+        
+        // Update sentiment analysis
+        const sentimentBar = document.getElementById('sentimentBar');
+        const sentimentText = document.getElementById('sentiment');
+        
+        if (results.sentiment) {
+            const score = results.sentiment.score * 100;
+            sentimentBar.style.width = `${score}%`;
+            
+            // Set color based on sentiment
+            if (score >= 70) {
+                sentimentBar.className = 'progress-bar bg-success';
+                sentimentText.textContent = 'Very Positive';
+            } else if (score >= 55) {
+                sentimentBar.className = 'progress-bar';
+                sentimentText.textContent = 'Positive';
+            } else if (score >= 45) {
+                sentimentBar.className = 'progress-bar bg-warning';
+                sentimentText.textContent = 'Neutral';
+            } else {
+                sentimentBar.className = 'progress-bar bg-danger';
+                sentimentText.textContent = 'Negative';
+            }
+        } else {
+            sentimentText.textContent = 'No sentiment analysis available';
+        }
+        
+        // Show the results container
+        resultsContainer.classList.remove('hidden');
+        
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %} 

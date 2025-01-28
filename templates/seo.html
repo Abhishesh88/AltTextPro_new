@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - SEO{% endblock %}
+
+{% block content %}
+<header>
+    <h1>SEO Description Generator</h1>
+    <p class="subtitle">Upload a product image to generate SEO-optimized descriptions and technical specifications.</p>
+</header>
+
+<div class="upload-box">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Drag and drop your image here or click to browse</p>
+    <input type="file" accept="image/*" style="display: none;">
+</div>
+
+<button class="submit-btn" disabled>
+    <i class="fas fa-magic"></i> Generate SEO Content
+</button>
+
+<!-- Error Alert -->
+<div class="alert alert-error hidden" id="errorAlert">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="errorMessage"></span>
+    <button onclick="this.parentElement.classList.add('hidden')" class="close-btn">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
+<div class="results-container hidden">
+    <div class="result-section">
+        <h3>SEO Title</h3>
+        <div class="content-box">
+            <p id="seoTitle" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('seoTitle').textContent, this)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Product Description</h3>
+        <div class="content-box">
+            <div id="productDescription" class="result-text"></div>
+            <div class="action-buttons">
+                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('productDescription').textContent, this)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="action-btn speak-btn" onclick="speakText(document.getElementById('productDescription').textContent)">
+                    <i class="fas fa-volume-up"></i> Speak
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Technical Specifications</h3>
+        <div class="content-box">
+            <div id="technicalSpecs" class="result-text"></div>
+            <div class="action-buttons">
+                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('technicalSpecs').textContent, this)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Additional Features</h3>
+        <div class="content-box">
+            <div id="additionalFeatures" class="result-text"></div>
+            <div class="action-buttons">
+                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('additionalFeatures').textContent, this)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showError(message) {
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = message;
+        errorAlert.classList.remove('hidden');
+        errorAlert.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function formatContent(content) {
+        if (!content) return 'No content generated';
+        // If content contains bullet points, format them properly
+        if (content.includes('•')) {
+            return content.split('\n').map(line => {
+                line = line.trim();
+                if (line.startsWith('•')) {
+                    return `<div class="bullet-point">${line}</div>`;
+                }
+                return `<div class="section-title">${line}</div>`;
+            }).join('');
+        }
+        return content;
+    }
+
+    function displayResults(response) {
+        const resultsContainer = document.querySelector('.results-container');
+        
+        if (!response.success) {
+            let errorMessage = response.error || 'An error occurred while generating content';
+            if (response.code === 'PROCESSING_ERROR' && response.details) {
+                errorMessage += `\nDetails: ${response.details}`;
+            }
+            showError(errorMessage);
+            return;
+        }
+
+        const results = response.data;
+        
+        // Check if any of the main content sections contain error messages
+        const hasErrors = Object.values(results).some(value => 
+            typeof value === 'string' && value.toLowerCase().includes('error')
+        );
+        
+        if (hasErrors) {
+            showError('An error occurred while generating some content. Please try again.');
+            return;
+        }
+        
+        // Update all sections with proper formatting and error handling
+        document.getElementById('seoTitle').textContent = results.seo_title || 'No SEO title generated';
+        document.getElementById('productDescription').innerHTML = formatContent(results.product_description);
+        document.getElementById('technicalSpecs').innerHTML = formatContent(results.technical_specs);
+        document.getElementById('additionalFeatures').innerHTML = formatContent(results.additional_features);
+        
+        // Show the results container
+        resultsContainer.classList.remove('hidden');
+        
+        // If there was an error alert showing, hide it
+        document.getElementById('errorAlert').classList.add('hidden');
+        
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Handle file upload and submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadBox = document.querySelector('.upload-box');
+        const fileInput = uploadBox.querySelector('input[type="file"]');
+        const submitBtn = document.querySelector('.submit-btn');
+        let isDragging = false;
+        
+        // Prevent click event from bubbling up from the file input
+        fileInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        uploadBox.addEventListener('click', (e) => {
+            // Only trigger if not dragging and not clicking the input itself
+            if (!isDragging && e.target !== fileInput) {
+                fileInput.click();
+            }
+        });
+        
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            uploadBox.classList.add('dragover');
+        });
+        
+        uploadBox.addEventListener('dragleave', () => {
+            isDragging = false;
+            uploadBox.classList.remove('dragover');
+        });
+        
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            isDragging = false;
+            uploadBox.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            } else {
+                showError('Please upload an image file');
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+            // Reset the file input so the same file can be selected again if needed
+            e.target.value = '';
+        });
+        
+        function handleFile(file) {
+            // Update UI to show selected file
+            uploadBox.querySelector('p').textContent = `Selected: ${file.name}`;
+            submitBtn.disabled = false;
+            
+            // Auto-submit
+            submitForm(file);
+        }
+        
+        async function submitForm(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            // Reset any previous errors
+            document.getElementById('errorAlert').classList.add('hidden');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            
+            try {
+                const response = await fetch('/seo', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                displayResults(result);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while processing your request. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-magic"></i> Generate SEO Content';
+            }
+        }
+    });
+</script>
+
+<style>
+    .alert {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .alert-error {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #991b1b;
+    }
+    
+    .alert .close-btn {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+    }
+    
+    .content-box {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+    }
+    
+    .bullet-point {
+        padding-left: 1.5rem;
+        position: relative;
+        margin: 0.5rem 0;
+    }
+    
+    .section-title {
+        font-weight: bold;
+        margin: 1rem 0 0.5rem 0;
+    }
+    
+    .result-text {
+        white-space: pre-wrap;
+        line-height: 1.5;
+    }
+    
+    .hidden {
+        display: none;
+    }
+</style>
+{% endblock %} 

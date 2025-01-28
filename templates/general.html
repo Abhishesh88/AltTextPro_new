@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - General Analysis{% endblock %}
+
+{% block content %}
+<header>
+    <h1>General Image Analysis</h1>
+    <p class="subtitle">Upload an image to generate comprehensive analysis including alt text, context, and enhanced descriptions.</p>
+</header>
+
+<div class="upload-box">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Drag and drop your image here or click to browse</p>
+    <input type="file" accept="image/*" style="display: none;">
+</div>
+
+<button class="submit-btn" disabled>
+    <i class="fas fa-magic"></i> Analyze Image
+</button>
+
+<div class="results-container hidden">
+    <div class="result-section">
+        <h3>Alt Text</h3>
+        <p id="altText"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('altText').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('altText').textContent)">
+                <i class="fas fa-volume-up"></i> Speak
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Context</h3>
+        <p id="context"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('context').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('context').textContent)">
+                <i class="fas fa-volume-up"></i> Speak
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Enhanced Description</h3>
+        <p id="enhancedDescription"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('enhancedDescription').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('enhancedDescription').textContent)">
+                <i class="fas fa-volume-up"></i> Speak
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function displayResults(results) {
+        const resultsContainer = document.querySelector('.results-container');
+        
+        // Update the text content of each section
+        document.getElementById('altText').textContent = results.alt_text || 'No alt text generated';
+        document.getElementById('context').textContent = results.context || 'No context generated';
+        document.getElementById('enhancedDescription').textContent = results.enhanced_description || 'No enhanced description generated';
+        
+        // Show the results container
+        resultsContainer.classList.remove('hidden');
+        
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - Medical Analysis{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Medical Image Analysis</h1>
+    <p class="subtitle">Upload a medical image for AI-assisted analysis. Note: This is a demonstration tool and should not replace professional medical diagnosis.</p>
+</header>
+
+<div class="upload-box">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Drag and drop your medical image here or click to browse</p>
+    <input type="file" accept="image/*" style="display: none;">
+</div>
+
+<button class="submit-btn" disabled>
+    <i class="fas fa-microscope"></i> Analyze Medical Image
+</button>
+
+<div class="results-container hidden">
+    <div class="result-section">
+        <h3>Key Findings</h3>
+        <p id="findings"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('findings').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Potential Diagnosis</h3>
+        <p id="diagnosis"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('diagnosis').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Recommendations</h3>
+        <p id="recommendations"></p>
+        <div class="action-buttons">
+            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('recommendations').textContent, this)">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <h3>Analysis Confidence</h3>
+        <div class="progress">
+            <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <p id="confidenceText" class="mt-2"></p>
+        <div class="info mt-3">
+            <i class="fas fa-info-circle"></i>
+            This is an AI-assisted analysis and should not replace professional medical diagnosis. Please consult with healthcare professionals for accurate diagnosis and treatment.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function displayResults(results) {
+        const resultsContainer = document.querySelector('.results-container');
+        
+        // Update findings
+        document.getElementById('findings').textContent = results.findings || 'No findings available';
+        
+        // Update diagnosis
+        document.getElementById('diagnosis').textContent = results.diagnosis || 'No diagnosis available';
+        
+        // Update recommendations
+        document.getElementById('recommendations').textContent = results.recommendations || 'No recommendations available';
+        
+        // Update confidence score
+        const confidenceScore = results.confidence_score * 100;
+        const confidenceBar = document.getElementById('confidenceBar');
+        const confidenceText = document.getElementById('confidenceText');
+        
+        confidenceBar.style.width = `${confidenceScore}%`;
+        
+        // Set color and text based on confidence
+        if (confidenceScore >= 80) {
+            confidenceBar.className = 'progress-bar bg-success';
+            confidenceText.textContent = 'High Confidence';
+        } else if (confidenceScore >= 60) {
+            confidenceBar.className = 'progress-bar';
+            confidenceText.textContent = 'Moderate Confidence';
+        } else if (confidenceScore >= 40) {
+            confidenceBar.className = 'progress-bar bg-warning';
+            confidenceText.textContent = 'Low Confidence';
+        } else {
+            confidenceBar.className = 'progress-bar bg-danger';
+            confidenceText.textContent = 'Very Low Confidence';
+        }
+        
+        // Show the results container
+        resultsContainer.classList.remove('hidden');
+        
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %} 

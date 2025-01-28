@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFOSYS Image Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #23cca2;
+            --secondary-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --card-background: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .tool-card {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--secondary-color);
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .tool-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .tool-description {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span style="color: #23cca2;">INFOSYS</span> Image Analyzer</h1>
+            <p>Choose the tool that best fits your needs</p>
+        </header>
+
+        <div class="tools-grid">
+            <a href="/seo" class="tool-card">
+                <i class="fas fa-search tool-icon"></i>
+                <h2 class="tool-title">SEO Description Generator</h2>
+                <p class="tool-description">Create SEO-optimized descriptions for your product images.</p>
+            </a>
+
+            <a href="/medical-image-analysis" class="tool-card">
+                <i class="fas fa-stethoscope tool-icon"></i>
+                <h2 class="tool-title">Medical Image Analysis</h2>
+                <p class="tool-description">Analyze and interpret medical images for better diagnosis.</p>
+                <p class="tool-description">!!! This Tool is under Work !!!</p>
+            </a>
+
+            <a href="/social-media" class="tool-card">
+                <i class="fas fa-hashtag tool-icon"></i>
+                <h2 class="tool-title">Social Media Tool</h2>
+                <p class="tool-description">Generate engaging captions and alt text optimized for social media platforms.</p>
+            </a>
+
+            <a href="/general" class="tool-card">
+                <i class="fas fa-tools tool-icon"></i>
+                <h2 class="tool-title">General Analysis</h2>
+                <p class="tool-description">Complete image analysis with alt text, context, and enhanced descriptions.</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html> 
