@@ -3,58 +3,80 @@
 {% block title %}INFOSYS Image Analyzer - General Analysis{% endblock %}
 
 {% block content %}
-<header>
+<div class="page-header animate__animated animate__fadeIn">
     <h1>General Image Analysis</h1>
-    <p class="subtitle">Upload an image to generate comprehensive analysis including alt text, context, and enhanced descriptions.</p>
-</header>
-
-<div class="upload-box">
-    <i class="fas fa-cloud-upload-alt"></i>
-    <p>Drag and drop your image here or click to browse</p>
-    <input type="file" accept="image/*" style="display: none;">
+    <p class="subtitle">Transform your images into detailed descriptions with AI-powered analysis</p>
 </div>
 
-<button class="submit-btn" disabled>
-    <i class="fas fa-magic"></i> Analyze Image
-</button>
+<div class="card upload-section animate__animated animate__fadeInUp">
+    <div class="upload-box" id="uploadBox">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p class="upload-text">Drag and drop your image here or click to browse</p>
+        <input type="file" accept="image/*" style="display: none;" id="fileInput">
+    </div>
+    
+    <div class="preview-container hidden" id="previewContainer">
+        <img src="" alt="Preview" class="preview-image">
+        <button class="btn btn-icon remove-btn" onclick="removeImage()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
-<div class="results-container hidden">
+    <button class="btn btn-primary generate-btn" id="generateBtn" disabled>
+        <i class="fas fa-magic"></i>
+        <span>Generate Description</span>
+    </button>
+</div>
+
+<div class="results-container hidden animate__animated animate__fadeIn" id="resultsContainer">
     <div class="result-section">
-        <h3>Alt Text</h3>
-        <p id="altText"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('altText').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
-            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('altText').textContent)">
-                <i class="fas fa-volume-up"></i> Speak
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-eye"></i> Alt Text</h3>
+        </div>
+        <div class="content-box">
+            <p id="altText" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('altText').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="btn btn-secondary" onclick="speakText(document.getElementById('altText').textContent)">
+                    <i class="fas fa-volume-up"></i> Listen
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Context</h3>
-        <p id="context"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('context').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
-            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('context').textContent)">
-                <i class="fas fa-volume-up"></i> Speak
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-align-left"></i> Context</h3>
+        </div>
+        <div class="content-box">
+            <p id="context" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('context').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="btn btn-secondary" onclick="speakText(document.getElementById('context').textContent)">
+                    <i class="fas fa-volume-up"></i> Listen
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Enhanced Description</h3>
-        <p id="enhancedDescription"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('enhancedDescription').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
-            <button class="action-btn speak-btn" onclick="speakText(document.getElementById('enhancedDescription').textContent)">
-                <i class="fas fa-volume-up"></i> Speak
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-feather"></i> Enhanced Description</h3>
+        </div>
+        <div class="content-box">
+            <p id="enhancedDescription" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('enhancedDescription').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="btn btn-secondary" onclick="speakText(document.getElementById('enhancedDescription').textContent)">
+                    <i class="fas fa-volume-up"></i> Listen
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -62,19 +84,98 @@
 
 {% block extra_scripts %}
 <script>
-    function displayResults(results) {
-        const resultsContainer = document.querySelector('.results-container');
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        let currentFile = null;
+
+        // Upload Box Event Listeners
+        uploadBox.addEventListener('click', () => fileInput.click());
         
-        // Update the text content of each section
-        document.getElementById('altText').textContent = results.alt_text || 'No alt text generated';
-        document.getElementById('context').textContent = results.context || 'No context generated';
-        document.getElementById('enhancedDescription').textContent = results.enhanced_description || 'No enhanced description generated';
-        
-        // Show the results container
-        resultsContainer.classList.remove('hidden');
-        
-        // Scroll to results
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-    }
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            } else {
+                showToast('Please upload an image file', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            currentFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                previewContainer.querySelector('img').src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                uploadBox.classList.add('hidden');
+                generateBtn.disabled = false;
+                
+                showToast('Image uploaded successfully', 'success');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // Make functions globally available
+        window.removeImage = function() {
+            currentFile = null;
+            previewContainer.classList.add('hidden');
+            uploadBox.classList.remove('hidden');
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+            fileInput.value = '';
+        };
+
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy text', 'error');
+            });
+        };
+
+        window.speakText = async function(text) {
+            try {
+                const response = await fetch('/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!response.ok) throw new Error('Speech generation failed');
+
+                const blob = await response.blob();
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.play();
+                showToast('Playing audio...', 'success');
+            } catch (error) {
+                console.error('Speech error:', error);
+                showToast('Failed to generate speech', 'error');
+            }
+        };
+    });
 </script>
 {% endblock %} 

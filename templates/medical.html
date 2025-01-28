@@ -3,107 +3,261 @@
 {% block title %}INFOSYS Image Analyzer - Medical Analysis{% endblock %}
 
 {% block content %}
-<header>
+<div class="page-header animate__animated animate__fadeIn">
     <h1>Medical Image Analysis</h1>
     <p class="subtitle">Upload a medical image for AI-assisted analysis. Note: This is a demonstration tool and should not replace professional medical diagnosis.</p>
-</header>
-
-<div class="upload-box">
-    <i class="fas fa-cloud-upload-alt"></i>
-    <p>Drag and drop your medical image here or click to browse</p>
-    <input type="file" accept="image/*" style="display: none;">
 </div>
 
-<button class="submit-btn" disabled>
-    <i class="fas fa-microscope"></i> Analyze Medical Image
-</button>
+<div class="card upload-section animate__animated animate__fadeInUp">
+    <div class="upload-box" id="uploadBox">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p class="upload-text">Drag and drop your medical image here or click to browse</p>
+        <input type="file" accept="image/*" style="display: none;" id="fileInput">
+    </div>
+    
+    <div class="preview-container hidden" id="previewContainer">
+        <img src="" alt="Preview" class="preview-image">
+        <button class="btn btn-icon remove-btn" onclick="removeImage()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
-<div class="results-container hidden">
+    <button class="btn btn-primary generate-btn" id="generateBtn" disabled>
+        <i class="fas fa-microscope"></i>
+        <span>Analyze Medical Image</span>
+    </button>
+</div>
+
+<div class="results-container hidden animate__animated animate__fadeIn" id="resultsContainer">
     <div class="result-section">
-        <h3>Key Findings</h3>
-        <p id="findings"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('findings').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-search-plus"></i> Key Findings</h3>
+        </div>
+        <div class="content-box">
+            <p id="findings" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('findings').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Potential Diagnosis</h3>
-        <p id="diagnosis"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('diagnosis').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-stethoscope"></i> Potential Diagnosis</h3>
+        </div>
+        <div class="content-box">
+            <p id="diagnosis" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('diagnosis').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Recommendations</h3>
-        <p id="recommendations"></p>
-        <div class="action-buttons">
-            <button class="action-btn copy-btn" onclick="copyText(document.getElementById('recommendations').textContent, this)">
-                <i class="fas fa-copy"></i> Copy
-            </button>
+        <div class="section-header">
+            <h3><i class="fas fa-clipboard-list"></i> Recommendations</h3>
+        </div>
+        <div class="content-box">
+            <p id="recommendations" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('recommendations').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Analysis Confidence</h3>
-        <div class="progress">
-            <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        <div class="section-header">
+            <h3><i class="fas fa-chart-line"></i> Analysis Confidence</h3>
         </div>
-        <p id="confidenceText" class="mt-2"></p>
-        <div class="info mt-3">
-            <i class="fas fa-info-circle"></i>
-            This is an AI-assisted analysis and should not replace professional medical diagnosis. Please consult with healthcare professionals for accurate diagnosis and treatment.
+        <div class="content-box">
+            <div class="progress">
+                <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="confidenceText" class="confidence-text"></p>
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <p>This is an AI-assisted analysis and should not replace professional medical diagnosis. Please consult with healthcare professionals for accurate diagnosis and treatment.</p>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+    .progress {
+        height: 1rem;
+        background-color: var(--background-color);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        margin: var(--spacing-md) 0;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+        transition: width 0.3s ease;
+    }
+
+    .progress-bar.bg-success {
+        background-color: var(--success-color);
+    }
+
+    .progress-bar.bg-warning {
+        background-color: var(--warning-color);
+    }
+
+    .progress-bar.bg-danger {
+        background-color: var(--error-color);
+    }
+
+    .confidence-text {
+        text-align: center;
+        color: var(--text-secondary);
+        margin: var(--spacing-sm) 0;
+        font-weight: 500;
+    }
+
+    .info-box {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
+        background-color: var(--background-color);
+        border-radius: var(--radius-sm);
+        margin-top: var(--spacing-md);
+    }
+
+    .info-box i {
+        color: var(--warning-color);
+        font-size: 1.2rem;
+    }
+
+    .info-box p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
-    function displayResults(results) {
-        const resultsContainer = document.querySelector('.results-container');
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        let currentFile = null;
+
+        // Upload Box Event Listeners
+        uploadBox.addEventListener('click', () => fileInput.click());
         
-        // Update findings
-        document.getElementById('findings').textContent = results.findings || 'No findings available';
-        
-        // Update diagnosis
-        document.getElementById('diagnosis').textContent = results.diagnosis || 'No diagnosis available';
-        
-        // Update recommendations
-        document.getElementById('recommendations').textContent = results.recommendations || 'No recommendations available';
-        
-        // Update confidence score
-        const confidenceScore = results.confidence_score * 100;
-        const confidenceBar = document.getElementById('confidenceBar');
-        const confidenceText = document.getElementById('confidenceText');
-        
-        confidenceBar.style.width = `${confidenceScore}%`;
-        
-        // Set color and text based on confidence
-        if (confidenceScore >= 80) {
-            confidenceBar.className = 'progress-bar bg-success';
-            confidenceText.textContent = 'High Confidence';
-        } else if (confidenceScore >= 60) {
-            confidenceBar.className = 'progress-bar';
-            confidenceText.textContent = 'Moderate Confidence';
-        } else if (confidenceScore >= 40) {
-            confidenceBar.className = 'progress-bar bg-warning';
-            confidenceText.textContent = 'Low Confidence';
-        } else {
-            confidenceBar.className = 'progress-bar bg-danger';
-            confidenceText.textContent = 'Very Low Confidence';
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            } else {
+                showToast('Please upload an image file', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            currentFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                previewContainer.querySelector('img').src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                uploadBox.classList.add('hidden');
+                generateBtn.disabled = false;
+                
+                showToast('Image uploaded successfully', 'success');
+            };
+            
+            reader.readAsDataURL(file);
         }
-        
-        // Show the results container
-        resultsContainer.classList.remove('hidden');
-        
-        // Scroll to results
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-    }
+
+        function displayResults(results) {
+            const data = results.data || results;
+            
+            // Update findings
+            document.getElementById('findings').textContent = data.findings || 'No findings available';
+            
+            // Update diagnosis
+            document.getElementById('diagnosis').textContent = data.diagnosis || 'No diagnosis available';
+            
+            // Update recommendations
+            document.getElementById('recommendations').textContent = data.recommendations || 'No recommendations available';
+            
+            // Update confidence score
+            const confidenceScore = data.confidence_score * 100;
+            const confidenceBar = document.getElementById('confidenceBar');
+            const confidenceText = document.getElementById('confidenceText');
+            
+            confidenceBar.style.width = `${confidenceScore}%`;
+            
+            // Set color and text based on confidence
+            if (confidenceScore >= 80) {
+                confidenceBar.className = 'progress-bar bg-success';
+                confidenceText.textContent = 'High Confidence';
+            } else if (confidenceScore >= 60) {
+                confidenceBar.className = 'progress-bar';
+                confidenceText.textContent = 'Moderate Confidence';
+            } else if (confidenceScore >= 40) {
+                confidenceBar.className = 'progress-bar bg-warning';
+                confidenceText.textContent = 'Low Confidence';
+            } else {
+                confidenceBar.className = 'progress-bar bg-danger';
+                confidenceText.textContent = 'Very Low Confidence';
+            }
+            
+            // Show the results container with animation
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Make functions globally available
+        window.removeImage = function() {
+            currentFile = null;
+            previewContainer.classList.add('hidden');
+            uploadBox.classList.remove('hidden');
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+            fileInput.value = '';
+        };
+
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy text', 'error');
+            });
+        };
+    });
 </script>
 {% endblock %} 

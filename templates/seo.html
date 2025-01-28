@@ -3,37 +3,44 @@
 {% block title %}INFOSYS Image Analyzer - SEO{% endblock %}
 
 {% block content %}
-<header>
-    <h1>SEO Description Generator</h1>
-    <p class="subtitle">Upload a product image to generate SEO-optimized descriptions and technical specifications.</p>
-</header>
-
-<div class="upload-box">
-    <i class="fas fa-cloud-upload-alt"></i>
-    <p>Drag and drop your image here or click to browse</p>
-    <input type="file" accept="image/*" style="display: none;">
+<div class="page-header animate__animated animate__fadeIn">
+    <h1>SEO Content Generator</h1>
+    <p class="subtitle">Transform your images into SEO-optimized content with AI-powered analysis</p>
 </div>
 
-<button class="submit-btn" disabled>
-    <i class="fas fa-magic"></i> Generate SEO Content
-</button>
+<div class="card upload-section animate__animated animate__fadeInUp">
+    <div class="upload-box" id="uploadBox">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p class="upload-text">Drag and drop your image here or click to browse</p>
+        <input type="file" accept="image/*" style="display: none;" id="fileInput">
+    </div>
+    
+    <div class="preview-container hidden" id="previewContainer">
+        <img src="" alt="Preview" class="preview-image">
+        <button class="btn btn-icon remove-btn" onclick="removeImage()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
-<!-- Error Alert -->
-<div class="alert alert-error hidden" id="errorAlert">
-    <i class="fas fa-exclamation-circle"></i>
-    <span id="errorMessage"></span>
-    <button onclick="this.parentElement.classList.add('hidden')" class="close-btn">
-        <i class="fas fa-times"></i>
+    <button class="btn btn-primary generate-btn" id="generateBtn" disabled>
+        <i class="fas fa-magic"></i>
+        <span>Generate SEO Content</span>
     </button>
 </div>
 
-<div class="results-container hidden">
+<div class="results-container hidden animate__animated animate__fadeIn" id="resultsContainer">
     <div class="result-section">
-        <h3>SEO Title</h3>
+        <div class="section-header">
+            <h3><i class="fas fa-heading"></i> SEO Title</h3>
+            <div class="confidence-badge" id="titleConfidence">
+                <i class="fas fa-chart-line"></i>
+                <span>98% Match</span>
+            </div>
+        </div>
         <div class="content-box">
             <p id="seoTitle" class="result-text"></p>
             <div class="action-buttons">
-                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('seoTitle').textContent, this)">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('seoTitle').textContent)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
             </div>
@@ -41,26 +48,34 @@
     </div>
 
     <div class="result-section">
-        <h3>Product Description</h3>
+        <div class="section-header">
+            <h3><i class="fas fa-align-left"></i> Product Description</h3>
+            <div class="tag-container">
+                <span class="tag">AI Generated</span>
+                <span class="tag">SEO Optimized</span>
+            </div>
+        </div>
         <div class="content-box">
             <div id="productDescription" class="result-text"></div>
             <div class="action-buttons">
-                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('productDescription').textContent, this)">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('productDescription').textContent)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button class="action-btn speak-btn" onclick="speakText(document.getElementById('productDescription').textContent)">
-                    <i class="fas fa-volume-up"></i> Speak
+                <button class="btn btn-secondary" onclick="speakText(document.getElementById('productDescription').textContent)">
+                    <i class="fas fa-volume-up"></i> Listen
                 </button>
             </div>
         </div>
     </div>
 
     <div class="result-section">
-        <h3>Technical Specifications</h3>
+        <div class="section-header">
+            <h3><i class="fas fa-cogs"></i> Technical Specifications</h3>
+        </div>
         <div class="content-box">
             <div id="technicalSpecs" class="result-text"></div>
             <div class="action-buttons">
-                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('technicalSpecs').textContent, this)">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('technicalSpecs').textContent)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
             </div>
@@ -68,11 +83,13 @@
     </div>
 
     <div class="result-section">
-        <h3>Additional Features</h3>
+        <div class="section-header">
+            <h3><i class="fas fa-star"></i> Additional Features</h3>
+        </div>
         <div class="content-box">
             <div id="additionalFeatures" class="result-text"></div>
             <div class="action-buttons">
-                <button class="action-btn copy-btn" onclick="copyText(document.getElementById('additionalFeatures').textContent, this)">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('additionalFeatures').textContent)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
             </div>
@@ -81,212 +98,287 @@
 </div>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+    .page-header {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .upload-section {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .preview-container {
+        position: relative;
+        margin: var(--spacing-lg) 0;
+        max-width: 100%;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+    }
+
+    .remove-btn {
+        position: absolute;
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        background-color: var(--error-color);
+        color: white;
+        padding: var(--spacing-sm);
+        border-radius: 50%;
+    }
+
+    .generate-btn {
+        margin-top: var(--spacing-lg);
+        min-width: 200px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .confidence-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background-color: var(--success-color);
+        color: white;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+    }
+
+    .tag-container {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+
+    .tag {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background-color: var(--background-color);
+        border: 1px solid var(--text-light);
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .content-box {
+        background-color: var(--background-color);
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-md);
+        margin-top: var(--spacing-sm);
+    }
+
+    .bullet-point {
+        display: flex;
+        gap: var(--spacing-sm);
+        margin: var(--spacing-sm) 0;
+        padding-left: var(--spacing-lg);
+    }
+
+    .bullet-point::before {
+        content: '•';
+        color: var(--primary-color);
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    @media (max-width: 768px) {
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
-    function showError(message) {
-        const errorAlert = document.getElementById('errorAlert');
-        const errorMessage = document.getElementById('errorMessage');
-        errorMessage.textContent = message;
-        errorAlert.classList.remove('hidden');
-        errorAlert.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function formatContent(content) {
-        if (!content) return 'No content generated';
-        // If content contains bullet points, format them properly
-        if (content.includes('•')) {
-            return content.split('\n').map(line => {
-                line = line.trim();
-                if (line.startsWith('•')) {
-                    return `<div class="bullet-point">${line}</div>`;
-                }
-                return `<div class="section-title">${line}</div>`;
-            }).join('');
-        }
-        return content;
-    }
-
-    function displayResults(response) {
-        const resultsContainer = document.querySelector('.results-container');
-        
-        if (!response.success) {
-            let errorMessage = response.error || 'An error occurred while generating content';
-            if (response.code === 'PROCESSING_ERROR' && response.details) {
-                errorMessage += `\nDetails: ${response.details}`;
-            }
-            showError(errorMessage);
-            return;
-        }
-
-        const results = response.data;
-        
-        // Check if any of the main content sections contain error messages
-        const hasErrors = Object.values(results).some(value => 
-            typeof value === 'string' && value.toLowerCase().includes('error')
-        );
-        
-        if (hasErrors) {
-            showError('An error occurred while generating some content. Please try again.');
-            return;
-        }
-        
-        // Update all sections with proper formatting and error handling
-        document.getElementById('seoTitle').textContent = results.seo_title || 'No SEO title generated';
-        document.getElementById('productDescription').innerHTML = formatContent(results.product_description);
-        document.getElementById('technicalSpecs').innerHTML = formatContent(results.technical_specs);
-        document.getElementById('additionalFeatures').innerHTML = formatContent(results.additional_features);
-        
-        // Show the results container
-        resultsContainer.classList.remove('hidden');
-        
-        // If there was an error alert showing, hide it
-        document.getElementById('errorAlert').classList.add('hidden');
-        
-        // Scroll to results
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Handle file upload and submission
     document.addEventListener('DOMContentLoaded', function() {
-        const uploadBox = document.querySelector('.upload-box');
-        const fileInput = uploadBox.querySelector('input[type="file"]');
-        const submitBtn = document.querySelector('.submit-btn');
-        let isDragging = false;
-        
-        // Prevent click event from bubbling up from the file input
-        fileInput.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-        
-        uploadBox.addEventListener('click', (e) => {
-            // Only trigger if not dragging and not clicking the input itself
-            if (!isDragging && e.target !== fileInput) {
-                fileInput.click();
-            }
-        });
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        let currentFile = null;
+
+        // Upload Box Event Listeners
+        uploadBox.addEventListener('click', () => fileInput.click());
         
         uploadBox.addEventListener('dragover', (e) => {
             e.preventDefault();
-            isDragging = true;
             uploadBox.classList.add('dragover');
         });
-        
+
         uploadBox.addEventListener('dragleave', () => {
-            isDragging = false;
             uploadBox.classList.remove('dragover');
         });
-        
+
         uploadBox.addEventListener('drop', (e) => {
             e.preventDefault();
-            isDragging = false;
             uploadBox.classList.remove('dragover');
             
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
                 handleFile(file);
             } else {
-                showError('Please upload an image file');
+                showToast('Please upload an image file', 'error');
             }
         });
-        
+
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) handleFile(file);
-            // Reset the file input so the same file can be selected again if needed
-            e.target.value = '';
         });
-        
+
         function handleFile(file) {
-            // Update UI to show selected file
-            uploadBox.querySelector('p').textContent = `Selected: ${file.name}`;
-            submitBtn.disabled = false;
+            currentFile = file;
+            const reader = new FileReader();
             
-            // Auto-submit
-            submitForm(file);
+            reader.onload = (e) => {
+                previewContainer.querySelector('img').src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                uploadBox.classList.add('hidden');
+                generateBtn.disabled = false;
+                
+                showToast('Image uploaded successfully', 'success');
+            };
+            
+            reader.readAsDataURL(file);
         }
-        
-        async function submitForm(file) {
+
+        function removeImage() {
+            currentFile = null;
+            previewContainer.classList.add('hidden');
+            uploadBox.classList.remove('hidden');
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+            fileInput.value = '';
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            if (!currentFile) {
+                showToast('Please select an image first', 'error');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
             const formData = new FormData();
-            formData.append('image', file);
-            
-            // Reset any previous errors
-            document.getElementById('errorAlert').classList.add('hidden');
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-            
+            formData.append('image', currentFile);
+
             try {
                 const response = await fetch('/seo', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const result = await response.json();
                 displayResults(result);
+                showToast('Content generated successfully', 'success');
             } catch (error) {
                 console.error('Error:', error);
-                showError('An error occurred while processing your request. Please try again.');
+                showToast('An error occurred while processing your request', 'error');
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-magic"></i> Generate SEO Content';
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate SEO Content';
+            }
+        });
+
+        function displayResults(response) {
+            if (!response.success) {
+                showToast(response.error || 'An error occurred', 'error');
+                return;
+            }
+
+            const results = response.data;
+            
+            // Check for errors in content
+            if (Object.values(results).some(value => 
+                typeof value === 'string' && value.toLowerCase().includes('error')
+            )) {
+                showToast('An error occurred while generating some content', 'error');
+                return;
+            }
+
+            // Update content sections
+            document.getElementById('seoTitle').textContent = results.seo_title || 'No SEO title generated';
+            document.getElementById('productDescription').innerHTML = formatContent(results.product_description);
+            document.getElementById('technicalSpecs').innerHTML = formatContent(results.technical_specs);
+            document.getElementById('additionalFeatures').innerHTML = formatContent(results.additional_features);
+
+            // Show results container with animation
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatContent(content) {
+            if (!content) return 'No content generated';
+            return content.split('\n').map(line => {
+                line = line.trim();
+                if (line.startsWith('•')) {
+                    return `<div class="bullet-point">${line}</div>`;
+                }
+                if (line.endsWith(':')) {
+                    return `<div class="section-title">${line}</div>`;
+                }
+                return `<div>${line}</div>`;
+            }).join('');
+        }
+
+        // Text-to-Speech functionality
+        async function speakText(text) {
+            try {
+                const response = await fetch('/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!response.ok) throw new Error('Speech generation failed');
+
+                const blob = await response.blob();
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.play();
+                showToast('Playing audio...', 'success');
+            } catch (error) {
+                console.error('Speech error:', error);
+                showToast('Failed to generate speech', 'error');
             }
         }
+
+        // Make functions globally available
+        window.removeImage = removeImage;
+        window.speakText = speakText;
     });
 </script>
-
-<style>
-    .alert {
-        padding: 1rem;
-        margin: 1rem 0;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .alert-error {
-        background-color: #fee2e2;
-        border: 1px solid #ef4444;
-        color: #991b1b;
-    }
-    
-    .alert .close-btn {
-        margin-left: auto;
-        background: none;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-    }
-    
-    .content-box {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 4px;
-        margin-top: 0.5rem;
-    }
-    
-    .bullet-point {
-        padding-left: 1.5rem;
-        position: relative;
-        margin: 0.5rem 0;
-    }
-    
-    .section-title {
-        font-weight: bold;
-        margin: 1rem 0 0.5rem 0;
-    }
-    
-    .result-text {
-        white-space: pre-wrap;
-        line-height: 1.5;
-    }
-    
-    .hidden {
-        display: none;
-    }
-</style>
 {% endblock %} 

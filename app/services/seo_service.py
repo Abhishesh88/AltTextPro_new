@@ -1,8 +1,4 @@
-import openai
-from config.config import OPENAI_API_KEY
-
-# Configure OpenAI
-openai.api_key = OPENAI_API_KEY
+from config.ai_config import get_openai_client, format_success_response, format_error_response, GPT_CONFIG
 
 def generate_seo_description(context, alt_text):
     """
@@ -16,7 +12,9 @@ def generate_seo_description(context, alt_text):
         dict: Contains formatted description and SEO title
     """
     try:
-        # Generate SEO title first with direct context
+        openai = get_openai_client()
+        
+        # Generate SEO title
         title_prompt = f"""Create an SEO-optimized title based on this image context and alt text:
 
 Context: {context}
@@ -27,109 +25,73 @@ Requirements:
 2. Include key descriptive elements
 3. Use proper capitalization
 4. Make it compelling and descriptive
-5. Focus on the main subject/theme
-6. Include any relevant specifications
-
-Example format: "Professional DSLR Camera with 24MP Sensor | Canon EOS 5D"
-"""
+5. Focus on the main subject/theme"""
 
         title_response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model=GPT_CONFIG["model"],
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are an SEO expert. Create compelling, keyword-rich titles that follow SEO best practices. Always return a title, even if information is limited."
-                },
+                {"role": "system", "content": "You are an SEO expert that creates optimized titles."},
                 {"role": "user", "content": title_prompt}
             ],
-            max_tokens=100,
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=60
         )
+        
         seo_title = title_response.choices[0].message['content'].strip()
-
-        # Generate detailed description
-        description_prompt = f"""Based on this image context and alt text, generate a structured product description:
+        
+        # Generate detailed sections
+        sections_prompt = f"""Generate a detailed product description with the following sections based on this image:
 
 Context: {context}
 Alt Text: {alt_text}
 
-Please provide the description in the following exact format:
+Required Sections:
+1. About: A compelling product overview (2-3 sentences)
+2. Technical: Key technical specifications or features (3-4 bullet points)
+3. Additional: Extra features or use cases (2-3 bullet points)
 
-About this item:
-• [First key feature]
-• [Second key feature]
-• [Third key feature]
+Format each section with clear headers and bullet points where appropriate."""
 
-Technical Specifications:
-• [First specification]
-• [Second specification]
-• [Third specification]
-
-Additional Features:
-• [First additional feature]
-• [Second additional feature]
-• [Third additional feature]
-
-Requirements:
-- Use bullet points with the • character (not hyphens or asterisks)
-- Each bullet point should be a complete, informative sentence
-- Include specific technical details and measurements where applicable
-- Maintain consistent grammatical structure across bullet points
-- Ensure each section has at least 3 bullet points
-- Total description should be minimum 80 words
-"""
-
-        description_response = openai.ChatCompletion.create(
-            model="gpt-4",
+        sections_response = openai.ChatCompletion.create(
+            model=GPT_CONFIG["model"],
             messages=[
-                {
-                    "role": "system",
-                    "content": """You are a product description expert. Follow these guidelines:
-                    - Always use bullet points with the • character
-                    - Maintain consistent formatting
-                    - Each bullet point must be a complete sentence
-                    - Focus on technical specifications and measurable features
-                    - Use parallel structure in bullet points
-                    - Separate content into distinct sections as specified in the prompt"""
-                },
-                {"role": "user", "content": description_prompt}
+                {"role": "system", "content": "You are an expert product copywriter focusing on SEO-optimized content."},
+                {"role": "user", "content": sections_prompt}
             ],
-            max_tokens=400,
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=GPT_CONFIG["max_tokens"]
         )
-        detailed_description = description_response.choices[0].message['content'].strip()
-
-        # Post-process the description to ensure proper formatting
-        sections = detailed_description.split('\n\n')
-        formatted_sections = []
         
-        for section in sections:
-            if ':' in section:
-                title, content = section.split(':', 1)
-                # Format bullet points properly
-                bullet_points = [point.strip() for point in content.split('\n') if point.strip()]
-                formatted_points = [f"• {point.lstrip('•').strip()}" for point in bullet_points]
-                formatted_section = f"{title}:\n" + '\n'.join(formatted_points)
-                formatted_sections.append(formatted_section)
+        sections_text = sections_response.choices[0].message['content'].strip()
         
-        formatted_description = '\n\n'.join(formatted_sections)
-
-        # Ensure we have a title
-        if not seo_title:
-            # Generate a simple title from context or alt text
-            seo_title = context.split('.')[0] if context else alt_text.split('.')[0]
-            # Capitalize the first letter of each word
-            seo_title = ' '.join(word.capitalize() for word in seo_title.split())
-
-        return {
-            'description': formatted_description,
+        # Parse sections
+        sections = {}
+        current_section = None
+        current_content = []
+        
+        for line in sections_text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            if line.lower().startswith(('about:', 'technical:', 'additional:')):
+                if current_section:
+                    sections[current_section] = '\n'.join(current_content)
+                current_section = line.split(':')[0].lower()
+                current_content = []
+            else:
+                current_content.append(line)
+                
+        if current_section:
+            sections[current_section] = '\n'.join(current_content)
+            
+        return format_success_response({
             'title': seo_title,
-            'sections': {
-                'about': formatted_sections[0] if len(formatted_sections) > 0 else "",
-                'technical': formatted_sections[1] if len(formatted_sections) > 1 else "",
-                'additional': formatted_sections[2] if len(formatted_sections) > 2 else ""
-            }
-        }
+            'sections': sections
+        })
         
     except Exception as e:
-        return {'error': str(e)} 
+        return format_error_response(
+            error_message=f"Error generating SEO description: {str(e)}",
+            error_code="SEO_GENERATION_ERROR"
+        ) 
