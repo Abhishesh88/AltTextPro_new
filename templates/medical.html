@@ -220,7 +220,7 @@ function handleFileUpload() {
     formData.append('file', file);
 
     // Send request
-    fetch('/medical-analysis', {
+    fetch('/medical-image-analysis', {
         method: 'POST',
         body: formData
     })

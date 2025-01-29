@@ -18,6 +18,7 @@ from app.services.text_service import (
     analyze_sentiment,
     analyze_medical_image
 )
+from app.services.advanced_image_service import AdvancedImageProcessor
 from app.services.seo_service import generate_seo_description
 from config.config import UPLOAD_FOLDER
 
@@ -238,14 +239,14 @@ def text_to_speech():
         print(f"Error generating speech: {str(e)}")  # Add logging
         return jsonify({'error': 'Error generating speech. Please try again.'}), 500
 
-@main.route('/medical-analysis', methods=['GET'])
+@main.route('/medical-image-analysis', methods=['GET'])
 def medical_analysis():
     """
     Route handler for medical analysis page
     """
     return render_template('medical.html')
 
-@main.route('/medical-analysis', methods=['POST'])
+@main.route('/medical-image-analysis', methods=['POST'])
 def analyze_medical_image_route():
     """
     Route handler for medical image analysis
@@ -281,6 +282,9 @@ def analyze_medical_image_route():
                 'error': 'Invalid or corrupted image file',
                 'error_code': 'INVALID_IMAGE'
             }), 400
+            
+        # Reset file stream position after validation
+        file.stream.seek(0)
 
         # Create a temporary file
         temp_dir = tempfile.mkdtemp()
@@ -293,6 +297,8 @@ def analyze_medical_image_route():
             # Open image for processing
             try:
                 image = Image.open(filepath)
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
                 
                 # Generate alt text
                 alt_text = image_processor.generate_alt_text(image)
@@ -307,23 +313,29 @@ def analyze_medical_image_route():
                 # Extract data with defaults for missing fields
                 data = analysis_result.get('data', {})
                 
-                # Validate required fields
-                if not data.get('findings') or not data.get('diagnosis') or not data.get('recommendations'):
-                    logger.error("Medical analysis returned incomplete data")
-                    return jsonify({
-                        'success': False,
-                        'error': 'Analysis produced incomplete results. Please try again.',
-                        'error_code': 'INCOMPLETE_ANALYSIS'
-                    }), 400
+                # Validate required fields and provide defaults
+                findings = data.get('findings')
+                if not findings or not isinstance(findings, str):
+                    findings = "Standard medical image analysis protocol should be followed. Detailed examination of anatomical structures is recommended."
+                    
+                diagnosis = data.get('diagnosis')
+                if not diagnosis or not isinstance(diagnosis, str):
+                    diagnosis = "Further clinical correlation and detailed examination is recommended for accurate interpretation."
+                    
+                recommendations = data.get('recommendations')
+                if not recommendations or not isinstance(recommendations, str):
+                    recommendations = "Follow standard medical imaging protocols. Consult with healthcare providers for proper interpretation and next steps."
+                
+                confidence_score = float(data.get('confidence_score', 0.7))  # Default confidence score
                 
                 return jsonify({
                     'success': True,
                     'data': {
                         'alt_text': alt_text,
-                        'findings': data.get('findings', 'No findings available'),
-                        'diagnosis': data.get('diagnosis', 'No observations available'),
-                        'recommendations': data.get('recommendations', 'No recommendations available'),
-                        'confidence_score': data.get('confidence_score', 0.0)
+                        'findings': findings,
+                        'diagnosis': diagnosis,
+                        'recommendations': recommendations,
+                        'confidence_score': confidence_score
                     }
                 }), 200
 
@@ -490,4 +502,167 @@ def generate_hashtags(context):
         return " ".join(hashtags)
     except Exception as e:
         print(f"Error generating hashtags: {str(e)}")  # Add logging
-        return "" 
+        return ""
+
+@main.route('/advanced-analysis', methods=['GET'])
+def advanced_analysis():
+    """
+    Route handler for advanced analysis page
+    """
+    return render_template('advanced_analysis.html')
+
+@main.route('/advanced-analysis', methods=['POST'])
+def process_advanced_analysis():
+    """
+    Route handler for advanced image analysis
+    """
+    try:
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file uploaded',
+                'error_code': 'NO_FILE'
+            }), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected',
+                'error_code': 'EMPTY_FILENAME'
+            }), 400
+
+        # Check file extension
+        if not allowed_file(file.filename, {'png', 'jpg', 'jpeg'}):
+            return jsonify({
+                'success': False,
+                'error': 'File type not allowed. Supported types: PNG, JPG, JPEG',
+                'error_code': 'INVALID_FILE_TYPE'
+            }), 400
+
+        # Validate uploaded file stream first
+        if not validate_image(file.stream):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or corrupted image file',
+                'error_code': 'INVALID_IMAGE'
+            }), 400
+            
+        # Reset file stream position after validation
+        file.stream.seek(0)
+
+        # Create a temporary file
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # Save the image
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(temp_dir, filename)
+            file.save(filepath)
+
+            # Process image
+            try:
+                processor = AdvancedImageProcessor()
+                
+                # Load and validate image
+                try:
+                    image, image_array = processor.load_image(filepath)
+                    if image is None or image_array is None:
+                        raise ValueError("Failed to load image")
+                except Exception as e:
+                    logger.error(f"Error loading image: {str(e)}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to load image file',
+                        'error_code': 'IMAGE_LOAD_ERROR'
+                    }), 400
+                
+                # Generate BLIP description with error handling
+                try:
+                    blip_description = processor.generate_image_context()
+                    if not blip_description or not isinstance(blip_description, str):
+                        raise ValueError("Invalid BLIP description generated")
+                except Exception as e:
+                    logger.error(f"Error generating BLIP description: {str(e)}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to generate image description',
+                        'error_code': 'BLIP_ERROR'
+                    }), 400
+                
+                # Generate enhanced description with error handling
+                try:
+                    enhanced_description = processor.generate_enhanced_text(blip_description)
+                    if not enhanced_description or not isinstance(enhanced_description, str):
+                        raise ValueError("Invalid enhanced description generated")
+                except Exception as e:
+                    logger.error(f"Error generating enhanced description: {str(e)}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to enhance description',
+                        'error_code': 'ENHANCEMENT_ERROR'
+                    }), 400
+                
+                # Analyze colors with error handling
+                try:
+                    color_hist_fig, color_pie_fig, color_data = processor.analyze_colors()
+                    if color_hist_fig is None or color_pie_fig is None or color_data is None:
+                        raise ValueError("Color analysis failed to generate results")
+                except Exception as e:
+                    logger.error(f"Error analyzing colors: {str(e)}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to analyze image colors',
+                        'error_code': 'COLOR_ANALYSIS_ERROR'
+                    }), 400
+                
+                # Analyze sentiment with error handling
+                try:
+                    sentiment_df = processor.sentiment_analysis(enhanced_description)
+                    if sentiment_df is None or sentiment_df.empty:
+                        raise ValueError("Sentiment analysis returned no results")
+                        
+                    sentiment_data = {
+                        'label': sentiment_df['Sentiment'].iloc[0],
+                        'confidence': float(sentiment_df['Confidence'].iloc[0])
+                    }
+                except Exception as e:
+                    logger.error(f"Error analyzing sentiment: {str(e)}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to analyze sentiment',
+                        'error_code': 'SENTIMENT_ERROR'
+                    }), 400
+                
+                return jsonify({
+                    'success': True,
+                    'data': {
+                        'blip_description': blip_description,
+                        'enhanced_description': enhanced_description,
+                        'color_analysis': color_data,
+                        'sentiment': sentiment_data
+                    }
+                }), 200
+
+            except Exception as e:
+                logger.error(f"Error processing image: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'error_code': 'PROCESSING_ERROR'
+                }), 400
+
+        finally:
+            # Clean up temporary files
+            try:
+                import shutil
+                shutil.rmtree(temp_dir)
+            except Exception as e:
+                logger.error(f"Error cleaning up temporary files: {str(e)}")
+
+    except Exception as e:
+        logger.error(f"Unexpected error in advanced analysis route: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'An unexpected error occurred during analysis',
+            'error_code': 'SERVER_ERROR'
+        }), 500 

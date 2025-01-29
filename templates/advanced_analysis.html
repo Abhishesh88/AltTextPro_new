@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - Advanced Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-4">
+                <h2>Advanced Image Analysis</h2>
+                <p class="text-muted">AI-powered image analysis with color detection and enhanced descriptions</p>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-container mb-4" id="upload-container">
+                <div class="upload-box" id="upload-box">
+                    <i class="fas fa-microscope fa-3x mb-3"></i>
+                    <h4>Upload Image</h4>
+                    <p class="text-muted">Drag and drop your image here or click to browse</p>
+                    <small class="text-muted d-block mt-2">Supported formats: PNG, JPEG, JPG</small>
+                    <input type="file" id="file-input" class="d-none" accept=".png,.jpg,.jpeg">
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading" class="text-center d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Performing advanced analysis... This may take a few moments.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="d-none">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Analysis Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Image Preview and Color Analysis -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <!-- Image Preview -->
+                                <div class="preview-container" id="preview-container">
+                                    <div class="position-relative">
+                                        <img id="preview-image" class="img-fluid rounded" alt="Image preview">
+                                        <button class="btn btn-icon remove-btn" onclick="resetAnalysis()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Color Analysis -->
+                                <div class="color-analysis">
+                                    <h6 class="fw-bold mb-3">
+                                        <i class="fas fa-palette me-2"></i>Color Analysis
+                                    </h6>
+                                    <div id="color-distribution"></div>
+                                    <div id="dominant-colors" class="mt-3">
+                                        <div class="color-chips"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLIP Description -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">
+                                <i class="fas fa-robot me-2"></i>AI Generated Description
+                                <button class="btn btn-sm btn-outline-primary float-end" onclick="copyToClipboard('blip-description')">
+                                    <i class="fas fa-copy me-1"></i>Copy
+                                </button>
+                            </h6>
+                            <div id="blip-description" class="analysis-section"></div>
+                        </div>
+
+                        <!-- Enhanced Description -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">
+                                <i class="fas fa-magic me-2"></i>Enhanced Description
+                                <button class="btn btn-sm btn-outline-primary float-end" onclick="copyToClipboard('enhanced-description')">
+                                    <i class="fas fa-copy me-1"></i>Copy
+                                </button>
+                            </h6>
+                            <div id="enhanced-description" class="analysis-section"></div>
+                        </div>
+
+                        <!-- Sentiment Analysis -->
+                        <div>
+                            <h6 class="fw-bold">
+                                <i class="fas fa-chart-bar me-2"></i>Sentiment Analysis
+                            </h6>
+                            <div class="analysis-section">
+                                <div class="sentiment-score mb-2">
+                                    <div class="progress" style="height: 25px;">
+                                        <div id="sentiment-bar" class="progress-bar" role="progressbar" style="width: 0%">
+                                            <span id="sentiment-text">Analyzing...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p id="sentiment-details" class="text-muted mb-0"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center mb-4">
+                    <button class="btn btn-primary me-2" onclick="downloadReport()">
+                        <i class="fas fa-download me-2"></i>Download Report
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="resetAnalysis()">
+                        <i class="fas fa-redo me-2"></i>Analyze Another Image
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Alert -->
+            <div id="error-alert" class="alert alert-danger d-none" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span id="error-message"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.upload-container {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.upload-container:hover {
+    border-color: #0d6efd;
+    background: #f1f8ff;
+}
+
+.upload-box {
+    padding: 40px 20px;
+    cursor: pointer;
+}
+
+.upload-box i {
+    color: #0d6efd;
+}
+
+.analysis-section {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 5px;
+    white-space: pre-line;
+}
+
+.preview-container {
+    position: relative;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.preview-container img {
+    max-height: 300px;
+    width: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.remove-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+.color-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.color-chip {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 5px;
+    font-size: 0.8rem;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.progress {
+    background-color: #e9ecef;
+    border-radius: 5px;
+}
+
+.progress-bar {
+    background-color: #0d6efd;
+    transition: width 0.6s ease;
+}
+
+.progress-bar.positive {
+    background-color: #198754;
+}
+
+.progress-bar.negative {
+    background-color: #dc3545;
+}
+
+.progress-bar.neutral {
+    background-color: #6c757d;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+</style>
+
+<!-- Custom Scripts -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadBox = document.getElementById('upload-box');
+    const uploadContainer = document.getElementById('upload-container');
+    const fileInput = document.getElementById('file-input');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const errorAlert = document.getElementById('error-alert');
+
+    // Upload box click handler
+    uploadBox.addEventListener('click', () => fileInput.click());
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileUpload);
+
+    // Drag and drop handlers
+    uploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadBox.style.borderColor = '#0d6efd';
+        uploadBox.style.background = '#f1f8ff';
+    });
+
+    uploadBox.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadBox.style.borderColor = '#dee2e6';
+        uploadBox.style.background = '#f8f9fa';
+    });
+
+    uploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadBox.style.borderColor = '#dee2e6';
+        uploadBox.style.background = '#f8f9fa';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileUpload();
+        }
+    });
+});
+
+function handleFileUpload() {
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+
+    // Show loading state
+    showLoading();
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Send request
+    fetch('/advanced-analysis', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            displayResults(data.data, file);
+        } else {
+            showError(data.error || 'An error occurred during analysis');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('An unexpected error occurred. Please try again.');
+    });
+}
+
+function displayResults(data, file) {
+    // Hide error if shown
+    hideError();
+    
+    // Display image preview
+    const preview = document.getElementById('preview-image');
+    const previewContainer = document.getElementById('preview-container');
+    
+    if (preview.src) {
+        URL.revokeObjectURL(preview.src);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    preview.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+    };
+    preview.src = objectUrl;
+    
+    // Update descriptions
+    document.getElementById('blip-description').textContent = data.blip_description;
+    document.getElementById('enhanced-description').textContent = data.enhanced_description;
+    
+    // Update color analysis
+    updateColorAnalysis(data.color_analysis);
+    
+    // Update sentiment
+    updateSentimentDisplay(data.sentiment);
+    
+    // Show results
+    document.getElementById('results').classList.remove('d-none');
+    document.getElementById('upload-container').classList.add('d-none');
+}
+
+function updateColorAnalysis(colorData) {
+    // Create color distribution chart
+    const trace = {
+        x: colorData.bins,
+        y: colorData.distribution,
+        type: 'bar',
+        marker: {
+            color: colorData.bins
+        }
+    };
+    
+    const layout = {
+        title: 'Color Distribution',
+        showlegend: false,
+        height: 200,
+        margin: {t: 30, r: 20, l: 30, b: 30}
+    };
+    
+    Plotly.newPlot('color-distribution', [trace], layout);
+    
+    // Create color chips
+    const colorChips = document.querySelector('.color-chips');
+    colorChips.innerHTML = '';
+    
+    colorData.dominant_colors.forEach((color, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'color-chip';
+        chip.style.backgroundColor = `rgb(${color.join(',')})`;
+        chip.textContent = `${colorData.percentages[index]}%`;
+        colorChips.appendChild(chip);
+    });
+}
+
+function updateSentimentDisplay(sentiment) {
+    const sentimentBar = document.getElementById('sentiment-bar');
+    const sentimentText = document.getElementById('sentiment-text');
+    const sentimentDetails = document.getElementById('sentiment-details');
+    
+    const percentage = sentiment.confidence;
+    
+    sentimentBar.style.width = `${percentage}%`;
+    sentimentBar.className = `progress-bar ${sentiment.label.toLowerCase()}`;
+    sentimentText.textContent = `${sentiment.label} (${percentage}%)`;
+    sentimentDetails.textContent = `The description has a ${sentiment.label.toLowerCase()} tone with ${percentage}% confidence.`;
+}
+
+function copyToClipboard(elementId) {
+    const content = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(content).then(() => {
+        showToast('Copied to clipboard!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy text', 'error');
+    });
+}
+
+function downloadReport() {
+    const content = generateReportContent();
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'advanced-analysis-report.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function generateReportContent() {
+    const timestamp = new Date().toLocaleString();
+    const blipDesc = document.getElementById('blip-description').textContent;
+    const enhancedDesc = document.getElementById('enhanced-description').textContent;
+    const sentiment = document.getElementById('sentiment-details').textContent;
+
+    return `Advanced Image Analysis Report
+Generated: ${timestamp}
+
+AI Generated Description:
+${blipDesc}
+
+Enhanced Description:
+${enhancedDesc}
+
+Sentiment Analysis:
+${sentiment}`;
+}
+
+function resetAnalysis() {
+    // Clear file input
+    document.getElementById('file-input').value = '';
+    
+    // Hide results and error
+    document.getElementById('results').classList.add('d-none');
+    hideError();
+    
+    // Show upload container
+    document.getElementById('upload-container').classList.remove('d-none');
+    
+    // Reset preview
+    const preview = document.getElementById('preview-image');
+    if (preview.src) {
+        URL.revokeObjectURL(preview.src);
+        preview.src = '';
+    }
+    
+    // Clear content
+    document.getElementById('blip-description').textContent = '';
+    document.getElementById('enhanced-description').textContent = '';
+    document.querySelector('.color-chips').innerHTML = '';
+    Plotly.purge('color-distribution');
+    
+    // Reset sentiment
+    const sentimentBar = document.getElementById('sentiment-bar');
+    sentimentBar.style.width = '0%';
+    sentimentBar.className = 'progress-bar';
+    document.getElementById('sentiment-text').textContent = 'Analyzing...';
+    document.getElementById('sentiment-details').textContent = '';
+}
+
+function showLoading() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('upload-container').classList.add('d-none');
+    document.getElementById('results').classList.add('d-none');
+    hideError();
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('d-none');
+}
+
+function showError(message) {
+    const errorAlert = document.getElementById('error-alert');
+    const errorMessage = document.getElementById('error-message');
+    
+    errorMessage.textContent = message;
+    errorAlert.classList.remove('d-none');
+    document.getElementById('results').classList.add('d-none');
+    document.getElementById('upload-container').classList.remove('d-none');
+}
+
+function hideError() {
+    document.getElementById('error-alert').classList.add('d-none');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} animate__animated animate__fadeIn`;
+    toast.style.position = 'fixed';
+    toast.style.top = '1rem';
+    toast.style.right = '1rem';
+    toast.style.zIndex = '1000';
+    toast.style.minWidth = '200px';
+    
+    toast.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} me-2"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.replace('animate__fadeIn', 'animate__fadeOut');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+</script>
+{% endblock %} 
