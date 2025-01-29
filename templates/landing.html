@@ -75,6 +75,45 @@
             color: #666;
             line-height: 1.6;
         }
+
+        .featured-card {
+            grid-column: span 2;
+            display: flex;
+            align-items: center;
+            text-align: left;
+            padding: 3rem;
+            background: linear-gradient(135deg, #23cca2 0%, #1a9c7d 100%);
+            color: white;
+        }
+
+        .featured-card .tool-icon {
+            color: white;
+            font-size: 4rem;
+            margin-right: 2rem;
+        }
+
+        .featured-card .tool-title {
+            color: white;
+            font-size: 2rem;
+        }
+
+        .featured-card .tool-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            .featured-card {
+                grid-column: span 1;
+                flex-direction: column;
+                text-align: center;
+                padding: 2rem;
+            }
+
+            .featured-card .tool-icon {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -85,6 +124,14 @@
         </header>
 
         <div class="tools-grid">
+            <a href="/image-analyzer" class="tool-card featured-card">
+                <i class="fas fa-wand-magic-sparkles tool-icon"></i>
+                <div>
+                    <h2 class="tool-title">AI Image Analyzer</h2>
+                    <p class="tool-description">Our most powerful tool for image analysis. Upload images or provide URLs for instant AI-powered analysis, including alt text generation and sentiment analysis.</p>
+                </div>
+            </a>
+
             <a href="/seo" class="tool-card">
                 <i class="fas fa-search tool-icon"></i>
                 <h2 class="tool-title">SEO Description Generator</h2>
@@ -95,7 +142,6 @@
                 <i class="fas fa-stethoscope tool-icon"></i>
                 <h2 class="tool-title">Medical Image Analysis</h2>
                 <p class="tool-description">Analyze and interpret medical images for better diagnosis.</p>
-                <p class="tool-description">!!! This Tool is under Work !!!</p>
             </a>
 
             <a href="/social-media" class="tool-card">

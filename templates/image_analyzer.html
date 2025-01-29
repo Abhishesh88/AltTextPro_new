@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}INFOSYS Image Analyzer - Image Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header animate__animated animate__fadeIn">
+    <h1>Image Analysis</h1>
+    <p class="subtitle">Analyze images using AI - Upload or provide a link</p>
+</div>
+
+<div class="input-selection-container animate__animated animate__fadeInUp">
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('upload')">
+            <i class="fas fa-upload"></i> Upload Image
+        </button>
+        <button class="tab-btn" onclick="switchTab('link')">
+            <i class="fas fa-link"></i> Image URL
+        </button>
+    </div>
+
+    <div class="input-container">
+        <div id="upload-section" class="tab-content active">
+            <div class="upload-box" id="uploadBox">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p class="upload-text">Drag and drop your image here or click to browse</p>
+                <input type="file" accept="image/*" style="display: none;" id="fileInput">
+            </div>
+            
+            <div class="preview-container hidden" id="previewContainer">
+                <img src="" alt="Preview" class="preview-image">
+                <button class="btn btn-icon remove-btn" onclick="removeImage()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="link-section" class="tab-content">
+            <div class="url-input-container">
+                <input type="text" id="imageUrl" class="url-input" placeholder="Enter image URL (Google Drive, Direct Link, etc.)">
+                <button class="btn btn-secondary" onclick="previewImageFromUrl()">
+                    <i class="fas fa-eye"></i> Preview
+                </button>
+            </div>
+            <div class="url-preview-container hidden" id="urlPreviewContainer">
+                <img src="" alt="URL Preview" class="preview-image">
+                <button class="btn btn-icon remove-btn" onclick="removeUrlImage()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary generate-btn" id="generateBtn" disabled>
+        <i class="fas fa-magic"></i>
+        <span>Analyze Image</span>
+    </button>
+</div>
+
+<div class="results-container hidden animate__animated animate__fadeIn" id="resultsContainer">
+    <div class="result-section">
+        <div class="section-header">
+            <h3><i class="fas fa-eye"></i> Alt Text</h3>
+            <p class="section-description">AI-generated description of the image</p>
+        </div>
+        <div class="content-box">
+            <p id="altText" class="result-text"></p>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('altText').textContent)">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="btn btn-secondary" onclick="speakText(document.getElementById('altText').textContent)">
+                    <i class="fas fa-volume-up"></i> Listen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-section">
+        <div class="section-header">
+            <h3><i class="fas fa-chart-line"></i> Sentiment Analysis</h3>
+            <p class="section-description">Emotional tone of the generated description</p>
+        </div>
+        <div class="content-box">
+            <div class="sentiment-container">
+                <div class="sentiment-score">
+                    <div class="progress">
+                        <div id="sentimentBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="sentimentText" class="sentiment-text">Analyzing sentiment...</p>
+                </div>
+                <div class="sentiment-details" id="sentimentDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .input-selection-container {
+        background: var(--surface-color);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .tab-container {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: var(--spacing-md) var(--spacing-lg);
+        font-size: 1rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .tab-btn i {
+        margin-right: var(--spacing-sm);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .url-input-container {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .url-input {
+        flex: 1;
+        padding: var(--spacing-md);
+        border: 2px solid var(--text-light);
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .url-input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+    }
+
+    .url-preview-container {
+        position: relative;
+        margin-top: var(--spacing-lg);
+    }
+
+    .sentiment-container {
+        padding: var(--spacing-md);
+    }
+
+    .sentiment-score {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .sentiment-text {
+        text-align: center;
+        margin-top: var(--spacing-sm);
+        font-weight: 500;
+    }
+
+    .sentiment-details {
+        background: var(--background-color);
+        padding: var(--spacing-md);
+        border-radius: var(--radius-sm);
+        margin-top: var(--spacing-md);
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const urlPreviewContainer = document.getElementById('urlPreviewContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        let currentFile = null;
+        let currentUrl = null;
+
+        // Upload Box Event Listeners
+        uploadBox.addEventListener('click', () => fileInput.click());
+        
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            } else {
+                showToast('Please upload an image file', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            currentFile = file;
+            currentUrl = null;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                previewContainer.querySelector('img').src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                uploadBox.classList.add('hidden');
+                generateBtn.disabled = false;
+                
+                showToast('Image uploaded successfully', 'success');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        window.previewImageFromUrl = async function() {
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+            if (!imageUrl) {
+                showToast('Please enter an image URL', 'error');
+                return;
+            }
+
+            try {
+                const img = urlPreviewContainer.querySelector('img');
+                img.src = imageUrl;
+                img.onload = () => {
+                    urlPreviewContainer.classList.remove('hidden');
+                    generateBtn.disabled = false;
+                    currentUrl = imageUrl;
+                    currentFile = null;
+                    showToast('Image loaded successfully', 'success');
+                };
+                img.onerror = () => {
+                    showToast('Failed to load image from URL', 'error');
+                    urlPreviewContainer.classList.add('hidden');
+                    generateBtn.disabled = true;
+                    currentUrl = null;
+                };
+            } catch (error) {
+                showToast('Error loading image from URL', 'error');
+            }
+        };
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}-section`).classList.add('active');
+            
+            // Reset state
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+            
+            if (tab === 'upload') {
+                currentUrl = null;
+                urlPreviewContainer.classList.add('hidden');
+                document.getElementById('imageUrl').value = '';
+            } else {
+                currentFile = null;
+                previewContainer.classList.add('hidden');
+                uploadBox.classList.remove('hidden');
+                fileInput.value = '';
+            }
+        };
+
+        window.removeImage = function() {
+            currentFile = null;
+            previewContainer.classList.add('hidden');
+            uploadBox.classList.remove('hidden');
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+            fileInput.value = '';
+        };
+
+        window.removeUrlImage = function() {
+            currentUrl = null;
+            urlPreviewContainer.classList.add('hidden');
+            document.getElementById('imageUrl').value = '';
+            generateBtn.disabled = true;
+            resultsContainer.classList.add('hidden');
+        };
+
+        generateBtn.addEventListener('click', async () => {
+            if (!currentFile && !currentUrl) {
+                showToast('Please provide an image to analyze', 'error');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+            try {
+                const formData = new FormData();
+                if (currentFile) {
+                    formData.append('image', currentFile);
+                } else {
+                    formData.append('image_url', currentUrl);
+                }
+
+                const response = await fetch('/image-analyzer', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                    showToast('Analysis completed successfully', 'success');
+                } else {
+                    showToast(result.error || 'Failed to analyze image', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred during analysis', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Analyze Image';
+            }
+        });
+
+        function displayResults(data) {
+            // Update alt text
+            document.getElementById('altText').textContent = data.alt_text || 'No description generated';
+            
+            // Update sentiment analysis
+            const sentimentBar = document.getElementById('sentimentBar');
+            const sentimentText = document.getElementById('sentimentText');
+            const sentimentDetails = document.getElementById('sentimentDetails');
+            
+            if (data.sentiment) {
+                const score = data.sentiment.score * 100;
+                sentimentBar.style.width = `${score}%`;
+                
+                if (score >= 75) {
+                    sentimentBar.className = 'progress-bar bg-success';
+                    sentimentText.textContent = 'Very Positive';
+                } else if (score >= 60) {
+                    sentimentBar.className = 'progress-bar';
+                    sentimentText.textContent = 'Positive';
+                } else if (score >= 40) {
+                    sentimentBar.className = 'progress-bar bg-warning';
+                    sentimentText.textContent = 'Neutral';
+                } else {
+                    sentimentBar.className = 'progress-bar bg-danger';
+                    sentimentText.textContent = 'Negative';
+                }
+                
+                sentimentDetails.textContent = data.sentiment.details || '';
+            }
+            
+            // Show results
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Make functions globally available
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy text', 'error');
+            });
+        };
+
+        window.speakText = async function(text) {
+            try {
+                const response = await fetch('/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!response.ok) throw new Error('Speech generation failed');
+
+                const blob = await response.blob();
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.play();
+                showToast('Playing audio...', 'success');
+            } catch (error) {
+                console.error('Speech error:', error);
+                showToast('Failed to generate speech', 'error');
+            }
+        };
+    });
+</script>
+{% endblock %} 

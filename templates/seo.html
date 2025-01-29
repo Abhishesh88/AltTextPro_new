@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}INFOSYS Image Analyzer - SEO{% endblock %}
+{% block title %}INFOSYS Image Analyzer - SEO Content Generator{% endblock %}
 
 {% block content %}
 <div class="page-header animate__animated animate__fadeIn">
@@ -11,7 +11,7 @@
 <div class="card upload-section animate__animated animate__fadeInUp">
     <div class="upload-box" id="uploadBox">
         <i class="fas fa-cloud-upload-alt"></i>
-        <p class="upload-text">Drag and drop your image here or click to browse</p>
+        <p class="upload-text">Drag and drop your product image here or click to browse</p>
         <input type="file" accept="image/*" style="display: none;" id="fileInput">
     </div>
     
@@ -32,10 +32,7 @@
     <div class="result-section">
         <div class="section-header">
             <h3><i class="fas fa-heading"></i> SEO Title</h3>
-            <div class="confidence-badge" id="titleConfidence">
-                <i class="fas fa-chart-line"></i>
-                <span>98% Match</span>
-            </div>
+            <p class="section-description">Optimized product title for search engines and marketplaces</p>
         </div>
         <div class="content-box">
             <p id="seoTitle" class="result-text"></p>
@@ -50,18 +47,26 @@
     <div class="result-section">
         <div class="section-header">
             <h3><i class="fas fa-align-left"></i> Product Description</h3>
-            <div class="tag-container">
-                <span class="tag">AI Generated</span>
-                <span class="tag">SEO Optimized</span>
-            </div>
+            <p class="section-description">Comprehensive product overview with key features and benefits</p>
         </div>
         <div class="content-box">
-            <div id="productDescription" class="result-text"></div>
+            <div id="aboutSection" class="description-section">
+                <h4>About</h4>
+                <div class="section-content"></div>
+            </div>
+            <div id="technicalSection" class="description-section">
+                <h4>Technical Specifications</h4>
+                <div class="section-content"></div>
+            </div>
+            <div id="additionalSection" class="description-section">
+                <h4>Additional Features</h4>
+                <div class="section-content"></div>
+            </div>
             <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('productDescription').textContent)">
-                    <i class="fas fa-copy"></i> Copy
+                <button class="btn btn-secondary" onclick="copyFullDescription()">
+                    <i class="fas fa-copy"></i> Copy All
                 </button>
-                <button class="btn btn-secondary" onclick="speakText(document.getElementById('productDescription').textContent)">
+                <button class="btn btn-secondary" onclick="speakText(getFullDescription())">
                     <i class="fas fa-volume-up"></i> Listen
                 </button>
             </div>
@@ -70,26 +75,13 @@
 
     <div class="result-section">
         <div class="section-header">
-            <h3><i class="fas fa-cogs"></i> Technical Specifications</h3>
+            <h3><i class="fas fa-tags"></i> Keywords</h3>
+            <p class="section-description">Top keywords extracted from the content</p>
         </div>
         <div class="content-box">
-            <div id="technicalSpecs" class="result-text"></div>
+            <div id="keywordsContainer" class="keywords-container"></div>
             <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('technicalSpecs').textContent)">
-                    <i class="fas fa-copy"></i> Copy
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="result-section">
-        <div class="section-header">
-            <h3><i class="fas fa-star"></i> Additional Features</h3>
-        </div>
-        <div class="content-box">
-            <div id="additionalFeatures" class="result-text"></div>
-            <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('additionalFeatures').textContent)">
+                <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('keywordsContainer').textContent)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
             </div>
@@ -211,6 +203,82 @@
             width: 100%;
         }
     }
+
+    .section-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .description-section {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .description-section h4 {
+        color: var(--text-primary);
+        margin-bottom: var(--spacing-sm);
+        font-size: 1.1rem;
+    }
+
+    .section-content {
+        white-space: pre-line;
+        line-height: 1.6;
+    }
+
+    .keywords-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .keyword-tag {
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .keyword-tag i {
+        color: var(--primary-color);
+        font-size: 0.8rem;
+    }
+
+    .preview-container {
+        position: relative;
+        margin: var(--spacing-lg) 0;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: var(--radius-lg);
+        object-fit: contain;
+    }
+
+    .remove-btn {
+        position: absolute;
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        background-color: var(--error-color);
+        color: white;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .remove-btn:hover {
+        transform: scale(1.1);
+    }
 </style>
 {% endblock %}
 
@@ -253,6 +321,41 @@
             if (file) handleFile(file);
         });
 
+        generateBtn.addEventListener('click', async () => {
+            if (!currentFile) {
+                showToast('Please upload an image first', 'error');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            const formData = new FormData();
+            formData.append('image', currentFile);
+
+            try {
+                const response = await fetch('/seo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                    showToast('SEO content generated successfully', 'success');
+                } else {
+                    showToast(result.error || 'Failed to generate content', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred while generating content', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate SEO Content';
+            }
+        });
+
         function handleFile(file) {
             currentFile = file;
             const reader = new FileReader();
@@ -269,92 +372,76 @@
             reader.readAsDataURL(file);
         }
 
-        function removeImage() {
+        function displayResults(data) {
+            // Update SEO title
+            document.getElementById('seoTitle').textContent = data.seo_title || 'No title generated';
+            
+            // Update sections
+            const sections = data.sections || {};
+            ['about', 'technical', 'additional'].forEach(section => {
+                const content = sections[section] || '';
+                document.querySelector(`#${section}Section .section-content`).textContent = content;
+            });
+            
+            // Update keywords
+            const keywordsContainer = document.getElementById('keywordsContainer');
+            keywordsContainer.innerHTML = '';
+            
+            if (data.keywords && data.keywords.length > 0) {
+                data.keywords.forEach(keyword => {
+                    const tag = document.createElement('span');
+                    tag.className = 'keyword-tag';
+                    tag.innerHTML = `<i class="fas fa-tag"></i> ${keyword}`;
+                    keywordsContainer.appendChild(tag);
+                });
+            } else {
+                keywordsContainer.textContent = 'No keywords generated';
+            }
+            
+            // Show results
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Make functions globally available
+        window.removeImage = function() {
             currentFile = null;
             previewContainer.classList.add('hidden');
             uploadBox.classList.remove('hidden');
             generateBtn.disabled = true;
             resultsContainer.classList.add('hidden');
             fileInput.value = '';
-        }
+        };
 
-        generateBtn.addEventListener('click', async () => {
-            if (!currentFile) {
-                showToast('Please select an image first', 'error');
-                return;
-            }
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy text', 'error');
+            });
+        };
 
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-            const formData = new FormData();
-            formData.append('image', currentFile);
-
-            try {
-                const response = await fetch('/seo', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                displayResults(result);
-                showToast('Content generated successfully', 'success');
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('An error occurred while processing your request', 'error');
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate SEO Content';
-            }
-        });
-
-        function displayResults(response) {
-            if (!response.success) {
-                showToast(response.error || 'An error occurred', 'error');
-                return;
-            }
-
-            const results = response.data;
+        window.copyFullDescription = function() {
+            const sections = ['about', 'technical', 'additional'];
+            const fullText = sections
+                .map(section => {
+                    const title = document.querySelector(`#${section}Section h4`).textContent;
+                    const content = document.querySelector(`#${section}Section .section-content`).textContent;
+                    return `${title}\n${content}`;
+                })
+                .join('\n\n');
             
-            // Check for errors in content
-            if (Object.values(results).some(value => 
-                typeof value === 'string' && value.toLowerCase().includes('error')
-            )) {
-                showToast('An error occurred while generating some content', 'error');
-                return;
-            }
+            copyToClipboard(fullText);
+        };
 
-            // Update content sections
-            document.getElementById('seoTitle').textContent = results.seo_title || 'No SEO title generated';
-            document.getElementById('productDescription').innerHTML = formatContent(results.product_description);
-            document.getElementById('technicalSpecs').innerHTML = formatContent(results.technical_specs);
-            document.getElementById('additionalFeatures').innerHTML = formatContent(results.additional_features);
+        window.getFullDescription = function() {
+            const sections = ['about', 'technical', 'additional'];
+            return sections
+                .map(section => document.querySelector(`#${section}Section .section-content`).textContent)
+                .join('. ');
+        };
 
-            // Show results container with animation
-            resultsContainer.classList.remove('hidden');
-            resultsContainer.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function formatContent(content) {
-            if (!content) return 'No content generated';
-            return content.split('\n').map(line => {
-                line = line.trim();
-                if (line.startsWith('•')) {
-                    return `<div class="bullet-point">${line}</div>`;
-                }
-                if (line.endsWith(':')) {
-                    return `<div class="section-title">${line}</div>`;
-                }
-                return `<div>${line}</div>`;
-            }).join('');
-        }
-
-        // Text-to-Speech functionality
-        async function speakText(text) {
+        window.speakText = async function(text) {
             try {
                 const response = await fetch('/text-to-speech', {
                     method: 'POST',
@@ -374,11 +461,7 @@
                 console.error('Speech error:', error);
                 showToast('Failed to generate speech', 'error');
             }
-        }
-
-        // Make functions globally available
-        window.removeImage = removeImage;
-        window.speakText = speakText;
+        };
     });
 </script>
 {% endblock %} 
